@@ -59,7 +59,7 @@
 	<input name="allButton" 
 		type="button" 
 		value="Show All" 
-		onclick="updateData()" />
+		onclick="showAll()" />
 
 </div>
 </div>
@@ -69,7 +69,7 @@
 
 	var svg = d3.select("svg"),
 		margin = {top: 20, right: 20, bottom: 60, left: 40},
-		width = +svg.attr("width") - margin.left - margin.right,
+		width = +svg.attr("width") - margin.left - margin.right - 30,
 		height = +svg.attr("height") - margin.top - margin.bottom,
 		g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -90,9 +90,15 @@
 
 	function showAll () {
 		mode = "all";
+    usrfile = "";
     // clearTimeout(repeat);
 		setupChart("fakedata/testcr" + counter + ".csv");
 	}
+
+  function showUser (user) {
+    usrfile = "fakedata/testusr" + user;
+    setupChart(usrfile + ".csv");
+  }
 
 
 	function setupChart(filename){
@@ -105,6 +111,7 @@
 			
 		}, function (error, data){
 			if (error) throw error;
+      g.selectAll("rect").remove();
 			var x = d3.scaleBand()
 				.rangeRound([0, width])
 				.paddingInner(0.1)
@@ -116,10 +123,9 @@
 			var z = d3.scaleOrdinal()
 				.range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
 
-
 			var keys = data.columns.slice(1);
-			data.sort(function(a, b) { return d3.ascending(a.user, b.user); });
-			// console.log(data);
+			// data.sort(function(a, b) { return d3.ascending(a.user, b.user); });
+			console.log(data);
 			x.domain(data.map(function(d) { return d.user; }));
 			y.domain([0, 1]).nice();
 			z.domain(keys);
@@ -151,6 +157,7 @@
 			  .attr("width", x.bandwidth());
 
 			console.log("making chart pieces");
+      g.selectAll(".axis").remove();
 
 			g.append("g")
 			  .attr("class", "axis")
@@ -178,10 +185,12 @@
 			  	if (mode == "all"){
 			  		console.log(mode);
 			  		mode = "singular";
+            showUser(d);
 			  	}
 			  	else {
 			  		console.log(mode);
 			  		mode = "all";
+            showAll();
 			  	}		  	
 
 			  })
@@ -189,26 +198,36 @@
 			  .attr("text-anchor", "end");
 			  // .style("text-anchor", "start");
 
+      legend = g.append("g")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .attr("text-anchor", "end")
+        .selectAll("g")
+        .data(keys.slice().reverse())
+        .enter().append("g")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 			
 			legend.data(keys.slice().reverse())
 				.enter().append("g")
 				.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 
 			legend.append("rect")
-			  .attr("x", width - 19)
+			  .attr("x", width +15)
 			  .attr("width", 19)
 			  .attr("height", 19)
 			  .attr("fill", z);
 
 			legend.append("text")
 			  // .attr("xlink:href", function(d) { return d.href; })
-			  .attr("x", width - 24)
+			  .attr("x", width + 10)
 			  .attr("y", 9.5)
 			  .attr("dy", "0.32em")
 			  .text(function(d) { return d; });
 
 		});
 	}
+
+  var bars;
 
 	function makeChart(filename){
 		d3.csv(filename, function (d, i, columns) {
@@ -240,7 +259,12 @@
 			z.domain(keys);
 			
 			// g.enter().append("g")
-			g.append("g")
+      // if (bars != undefined) {
+      //   bars.remove();
+      // }
+      g.selectAll("rect").remove();
+
+			bars = g.append("g")
 			  .selectAll("g")
 			  // .transition()
 			  // .duration (400)
@@ -267,79 +291,34 @@
 
 
 			// var legend = g.append("g")
-			legend = g.append("g")
-				.attr("font-family", "sans-serif")
-				.attr("font-size", 10)
-				.attr("text-anchor", "end")
-				.selectAll("g")
-				.data(keys.slice().reverse())
-				.enter().append("g")
-				.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+			// legend = g.append("g")
+			// 	.attr("font-family", "sans-serif")
+			// 	.attr("font-size", 10)
+			// 	.attr("text-anchor", "end")
+			// 	.selectAll("g")
+			// 	.data(keys.slice().reverse())
+			// 	.enter().append("g")
+			// 	.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
 				
-			legend.append("rect")
-			  .attr("x", width - 19)
-			  .attr("width", 19)
-			  .attr("height", 19)
-			  .attr("fill", z);
+			// legend.append("rect")
+			//   .attr("x", width +15)
+			//   .attr("width", 19)
+			//   .attr("height", 19)
+			//   .attr("fill", z);
 
-			legend.append("text")
-			  // .attr("xlink:href", function(d) { return d.href; })
-			  .attr("x", width - 24)
-			  .attr("y", 9.5)
-			  .attr("dy", "0.32em")
-			  .text(function(d) { return d; });
-
-			/*if (counter == 2){
-				console.log("making chart pieces");
-
-				g.append("g")
-				  .attr("class", "axis")
-				  .call(d3.axisLeft(y).ticks(null, "s"))
-				  .append("text")
-				  .attr("x", 2)
-				  .attr("y", y(y.ticks().pop()) + 0.5)
-				  // .attr("transform", "rotate(-90)")
-				  .attr("dy", "0.32em")
-				  .attr("fill", "#000")
-				  .attr("font-weight", "bold")
-				  .attr("text-anchor", "start")
-				  .text("Max");
-
-				var legend = g.append("g")
-					.attr("font-family", "sans-serif")
-					.attr("font-size", 10)
-					.attr("text-anchor", "end")
-					.selectAll("g")
-					.data(keys.slice().reverse())
-					.enter().append("g")
-					.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
-
-				g.append("g")
-				  .attr("class", "axis")
-				  .attr("transform", "translate(0," + height + ")")
-				  .call(d3.axisBottom(x))
-				  .selectAll("text")
-				  .attr("tranform", "rotate(90)");
-				  // .style("text-anchor", "start");
-
-				legend.append("rect")
-				  .attr("x", width - 19)
-				  .attr("width", 19)
-				  .attr("height", 19)
-				  .attr("fill", z);
-
-				legend.append("text")
-				  .attr("x", width - 24)
-				  .attr("y", 9.5)
-				  .attr("dy", "0.32em")
-				  .text(function(d) { return d; });
-				}*/
+			// legend.append("text")
+			//   // .attr("xlink:href", function(d) { return d.href; })
+			//   .attr("x", width + 10)
+			//   .attr("y", 9.5)
+			//   .attr("dy", "0.32em")
+			//   .text(function(d) { return d; });
 
 			}
 		);
 	}
 
 	var mode = "all";
+  var usrfile = "";
 	function pad(num, size){ return ('000000000' + num).substr(-size); }
 	function updateData() {
 		if (mode == "all"){
@@ -348,37 +327,30 @@
 			else
 				counter = 1;
 	
-			// console.log("updating " + counter);
-			
-			// makeChart("../etrsnapshots/etrsnapshot" + pad(counter, 6) + ".csv");
 			makeChart("fakedata/testcr" + counter + ".csv");
-			// d3.csv("../t2.csv",function (d, i, columns) {
-			// 	for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
-			// 	d.total = t;
-			// 	// console.log(t);
-			// 	return d;
-				
-			// }, function (error, data) {
-			// 	console.log(data);
-			// 	if (error) throw error;
-			// 	// g.remove("#theBars")
-			// 	var keys = data.columns.slice(1);
-			// 	// data.sort(function(a, b) { return b.total - a.total; });
-			// // 	// console.log(data);
-			// 	x.domain(data.map(function(d) { return d.User; }));
-			// 	y.domain([0, d3.max(data, function(d) { return 1.01; })]).nice();
-			// 	z.domain(keys);
-			// })
+      console.log("updating all");
+			
 		}
+
+    else {
+      if (usrfile != ""){
+        makeChart(usrfile + ".csv");
+        console.log("updating all");
+      }
+
+    }
+    // return true;
     // if (repeat == undefined) {
   		// repeat = window.setTimeout(updateData, 5000);	
+      // window.setTimeout(updateData, 5000);  
     // }
     // else {
     //   repeat = window.setTimeout(updateData, 5000);  
     // }
 	}
 	setupChart("fakedata/testcr" + counter + ".csv");
-  repeat = setInterval(updateData(), 5000);
+  var repeat = window.setInterval(updateData, 5000);
+  // window.setInterval(updateData, 1000);
 
 
 </script>

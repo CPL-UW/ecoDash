@@ -2,17 +2,17 @@ Ecoxpt todos:
 
 make this robust, 
 
-	animate transitions
+	~~ animate transitions
 
-update button goes away
+~~ update button goes away
 
 add opacity thing
 
-make stackedgraph/streamgraph
+~~ make stackedgraph/streamgraph
 
 labels on bars
 
-make username fit in a box
+~~ make username fit in a box
 	try making username modifiable – store dict in cookie
 
 
