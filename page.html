@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script> -->
+	<title></title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<style>
+		.axis .domain {
+			display: none;
+		}
+
+		.chart div {
+			font: 10px sans-serif;
+			background-color: steelblue;
+			text-align: right;
+			padding: 3px;
+			margin: 1px;
+			color: white;
+		}
+
+		path {
+			stroke: steelblue;
+			stroke-width: 1;
+			fill: none;
+		}
+		.axis {
+			shape-rendering: crispEdges;
+		}
+
+		.x.axis line {
+			stroke: lightgrey;
+		}
+
+		.x.axis .minor {
+			stroke-opacity: .5;
+		}
+
+		.x.axis path {
+			display: none;
+		}
+
+		.y.axis line, .y.axis path {
+			fill: #0f0;
+			stroke: #000;
+		}
+
+	</style>
+</head>
+<body>
+	<svg width="1500" height="600"></svg>
+
+<div id="option">
+    <input name="updateButton" 
+      type="button" 
+      value="Update" 
+      onclick="updateData()" />
+
+	<input name="allButton" 
+		type="button" 
+		value="Show All" 
+		onclick="updateData()" />
+
+</div>
+</div>
+
+</body>
+<script type="text/javascript">
+
+	var svg = d3.select("svg"),
+		margin = {top: 20, right: 20, bottom: 60, left: 40},
+		width = +svg.attr("width") - margin.left - margin.right,
+		height = +svg.attr("height") - margin.top - margin.bottom,
+		g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	
+// d3.csv("data.csv", function(d, i, columns) {
+//   for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+//   d.total = t;
+//   return d;
+// }
+	var counter = 1;
+	var legend = g.append("g")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", 10)
+		.attr("text-anchor", "end")
+		.selectAll("g")
+  
+  var repeat;
+
+	function showAll () {
+		mode = "all";
+    // clearTimeout(repeat);
+		setupChart("fakedata/testcr" + counter + ".csv");
+	}
+
+
+	function setupChart(filename){
+		d3.csv(filename, function (d, i, columns) {
+		// d3.csv("../etrsnapshots/etrsnapshot000001.csv", function (d, i, columns) {
+			for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+			d.total = t;
+			// console.log(t);
+			return d;
+			
+		}, function (error, data){
+			if (error) throw error;
+			var x = d3.scaleBand()
+				.rangeRound([0, width])
+				.paddingInner(0.1)
+				.align(0.1);
+
+			var y = d3.scaleLinear()
+				.rangeRound([height, 0]);
+
+			var z = d3.scaleOrdinal()
+				.range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+
+			var keys = data.columns.slice(1);
+			data.sort(function(a, b) { return d3.ascending(a.user, b.user); });
+			// console.log(data);
+			x.domain(data.map(function(d) { return d.user; }));
+			y.domain([0, 1]).nice();
+			z.domain(keys);
+			
+			// g.enter().append("g")
+			g.append("g")
+			  .selectAll("g")
+			  // .transition()
+			  // .duration (400)
+			  .data(d3.stack().keys(keys)(data))
+			  .enter().append("g")
+			  .attr("class", "mainChart")
+			  .attr("id", "theBars")
+			  .attr("fill", function(d) { return z(d.key); })
+			  .attr("transform", function (d) { 
+			  	// console.log(d); 
+			  	return 'translate(' + x(d[0].data.user) + ',0)';
+			  })
+			  .selectAll("rect")
+			  .data(function(d) { return d; })
+
+			  .enter().append("rect")
+			  .attr("x", function(d) { return x(d.data.user); })
+			  .attr("y", height)
+			  .transition()
+			  .duration(500)
+			  .attr("y", function(d) { return y(d[1]); })
+			  .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+			  .attr("width", x.bandwidth());
+
+			console.log("making chart pieces");
+
+			g.append("g")
+			  .attr("class", "axis")
+			  .call(d3.axisLeft(y).ticks(null, "s"))
+			  .append("text")
+			  .attr("x", 2)
+			  .attr("y", y(y.ticks().pop()) + 0.5)
+			  // .attr("transform", "rotate(-90)")
+			  .attr("dy", "0.32em")
+			  .attr("fill", "#000")
+			  .attr("font-weight", "bold")
+			  .attr("text-anchor", "start")
+			  .text("Max");
+
+			g.append("g")
+			  .attr("class", "axis")
+			  .attr("transform", "translate(0," + height + ")")
+			  .call(d3.axisBottom(x))
+			  .selectAll("text")
+			  // .attr("xlink:href", function(d) { return d.href; })
+			  .style("cursor", "pointer")
+			  .attr("fill", "blue")
+			  .on("click", function (d) { 
+			  	// document.location.href = "/" 
+			  	if (mode == "all"){
+			  		console.log(mode);
+			  		mode = "singular";
+			  	}
+			  	else {
+			  		console.log(mode);
+			  		mode = "all";
+			  	}		  	
+
+			  })
+			  .attr("transform", function (d) { return "rotate(-65)"; })
+			  .attr("text-anchor", "end");
+			  // .style("text-anchor", "start");
+
+			
+			legend.data(keys.slice().reverse())
+				.enter().append("g")
+				.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+			legend.append("rect")
+			  .attr("x", width - 19)
+			  .attr("width", 19)
+			  .attr("height", 19)
+			  .attr("fill", z);
+
+			legend.append("text")
+			  // .attr("xlink:href", function(d) { return d.href; })
+			  .attr("x", width - 24)
+			  .attr("y", 9.5)
+			  .attr("dy", "0.32em")
+			  .text(function(d) { return d; });
+
+		});
+	}
+
+	function makeChart(filename){
+		d3.csv(filename, function (d, i, columns) {
+		// d3.csv("../etrsnapshots/etrsnapshot000001.csv", function (d, i, columns) {
+			for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+			d.total = t;
+			// console.log(t);
+			return d;
+			
+		}, function (error, data){
+			if (error) throw error;
+			var x = d3.scaleBand()
+				.rangeRound([0, width])
+				.paddingInner(0.1)
+				.align(0.1);
+
+			var y = d3.scaleLinear()
+				.rangeRound([height, 0]);
+
+			var z = d3.scaleOrdinal()
+				.range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+
+			var keys = data.columns.slice(1);
+			data.sort(function(a, b) { return d3.ascending(a.user, b.user); });
+			// console.log(data);
+			x.domain(data.map(function(d) { return d.user; }));
+			y.domain([0, 1]).nice();
+			z.domain(keys);
+			
+			// g.enter().append("g")
+			g.append("g")
+			  .selectAll("g")
+			  // .transition()
+			  // .duration (400)
+			  .data(d3.stack().keys(keys)(data))
+			  .enter().append("g")
+			  .attr("class", "mainChart")
+			  .attr("id", "theBars")
+			  .attr("fill", function(d) { return z(d.key); })
+			  .attr("transform", function (d) { 
+			  	// console.log(d); 
+			  	return 'translate(' + x(d[0].data.user) + ',0)';
+			  })
+			  .selectAll("rect")
+			  .data(function(d) { return d; })
+
+			  .enter().append("rect")
+			  .attr("x", function(d) { return x(d.data.user); })
+			  .attr("y", height)
+			  .transition()
+			  .duration(500)
+			  .attr("y", function(d) { return y(d[1]); })
+			  .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+			  .attr("width", x.bandwidth());
+
+
+			// var legend = g.append("g")
+			legend = g.append("g")
+				.attr("font-family", "sans-serif")
+				.attr("font-size", 10)
+				.attr("text-anchor", "end")
+				.selectAll("g")
+				.data(keys.slice().reverse())
+				.enter().append("g")
+				.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+				
+			legend.append("rect")
+			  .attr("x", width - 19)
+			  .attr("width", 19)
+			  .attr("height", 19)
+			  .attr("fill", z);
+
+			legend.append("text")
+			  // .attr("xlink:href", function(d) { return d.href; })
+			  .attr("x", width - 24)
+			  .attr("y", 9.5)
+			  .attr("dy", "0.32em")
+			  .text(function(d) { return d; });
+
+			/*if (counter == 2){
+				console.log("making chart pieces");
+
+				g.append("g")
+				  .attr("class", "axis")
+				  .call(d3.axisLeft(y).ticks(null, "s"))
+				  .append("text")
+				  .attr("x", 2)
+				  .attr("y", y(y.ticks().pop()) + 0.5)
+				  // .attr("transform", "rotate(-90)")
+				  .attr("dy", "0.32em")
+				  .attr("fill", "#000")
+				  .attr("font-weight", "bold")
+				  .attr("text-anchor", "start")
+				  .text("Max");
+
+				var legend = g.append("g")
+					.attr("font-family", "sans-serif")
+					.attr("font-size", 10)
+					.attr("text-anchor", "end")
+					.selectAll("g")
+					.data(keys.slice().reverse())
+					.enter().append("g")
+					.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+				g.append("g")
+				  .attr("class", "axis")
+				  .attr("transform", "translate(0," + height + ")")
+				  .call(d3.axisBottom(x))
+				  .selectAll("text")
+				  .attr("tranform", "rotate(90)");
+				  // .style("text-anchor", "start");
+
+				legend.append("rect")
+				  .attr("x", width - 19)
+				  .attr("width", 19)
+				  .attr("height", 19)
+				  .attr("fill", z);
+
+				legend.append("text")
+				  .attr("x", width - 24)
+				  .attr("y", 9.5)
+				  .attr("dy", "0.32em")
+				  .text(function(d) { return d; });
+				}*/
+
+			}
+		);
+	}
+
+	var mode = "all";
+	function pad(num, size){ return ('000000000' + num).substr(-size); }
+	function updateData() {
+		if (mode == "all"){
+			if (counter < 27)
+				counter += 1;
+			else
+				counter = 1;
+	
+			// console.log("updating " + counter);
+			
+			// makeChart("../etrsnapshots/etrsnapshot" + pad(counter, 6) + ".csv");
+			makeChart("fakedata/testcr" + counter + ".csv");
+			// d3.csv("../t2.csv",function (d, i, columns) {
+			// 	for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+			// 	d.total = t;
+			// 	// console.log(t);
+			// 	return d;
+				
+			// }, function (error, data) {
+			// 	console.log(data);
+			// 	if (error) throw error;
+			// 	// g.remove("#theBars")
+			// 	var keys = data.columns.slice(1);
+			// 	// data.sort(function(a, b) { return b.total - a.total; });
+			// // 	// console.log(data);
+			// 	x.domain(data.map(function(d) { return d.User; }));
+			// 	y.domain([0, d3.max(data, function(d) { return 1.01; })]).nice();
+			// 	z.domain(keys);
+			// })
+		}
+    // if (repeat == undefined) {
+  		// repeat = window.setTimeout(updateData, 5000);	
+    // }
+    // else {
+    //   repeat = window.setTimeout(updateData, 5000);  
+    // }
+	}
+	setupChart("fakedata/testcr" + counter + ".csv");
+  repeat = setInterval(updateData(), 5000);
+
+
+</script>
+
+</html>

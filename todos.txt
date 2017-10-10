@@ -1,0 +1,32 @@
+Ecoxpt todos: 
+
+make this robust, 
+
+	animate transitions
+
+update button goes away
+
+add opacity thing
+
+make stackedgraph/streamgraph
+
+labels on bars
+
+make username fit in a box
+	try making username modifiable – store dict in cookie
+
+
+
+--------------
+
+stuckness in and through the extire framework:
+	
+
+sometimes when you think stuckness is good, it's bad and vice versa
+
+
+5 kinds of stucknesses:
+	in Ex, Ti, Re, and in transitions
+
+And we can do markov modeling of these stucknesses:
+	when do they not make wins for a while, and when do they 

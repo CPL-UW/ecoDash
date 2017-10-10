@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<!-- <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script> -->
+	<title></title>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<style>
+		.axis .domain {
+			display: none;
+		}
+
+		.chart div {
+			font: 10px sans-serif;
+			background-color: steelblue;
+			text-align: right;
+			padding: 3px;
+			margin: 1px;
+			color: white;
+		}
+
+		path {
+			stroke: steelblue;
+			stroke-width: 1;
+			fill: none;
+		}
+		.axis {
+			shape-rendering: crispEdges;
+		}
+
+		.x.axis line {
+			stroke: lightgrey;
+		}
+
+		.x.axis .minor {
+			stroke-opacity: .5;
+		}
+
+		.x.axis path {
+			display: none;
+		}
+
+		.y.axis line, .y.axis path {
+			fill: #0f0;
+			stroke: #000;
+		}
+
+	</style>
+</head>
+<body>
+	<svg width="1500" height="500"></svg>
+
+<div id="option">
+    <input name="updateButton" 
+           type="button" 
+           value="Update" 
+           onclick="loadNewData(1)" />
+</div>
+
+</body>
+<script type="text/javascript">
+
+	
+	
+// d3.csv("data.csv", function(d, i, columns) {
+//   for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+//   d.total = t;
+//   return d;
+// }
+
+	
+	var counter = 1;
+	loadNewData(0);
+	
+	function loadNewData (update = 0) {
+		console.log(counter + " " + update);
+		counter = counter + update
+		// function makeChart(filename){
+		filename = "fakedata/testcr" + counter + ".csv";
+		var data;
+		d3.csv(filename, function (d, i, columns) {
+		// d3.csv("../etrsnapshots/etrsnapshot000001.csv", function (d, i, columns) {
+			for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+			d.total = t;
+			// console.log(t);
+			return d;
+			
+		}, function (error, dat){
+			if (error) throw error;
+			
+
+			var keys = dat.columns.slice(1);
+			dat.sort(function(a, b) { return d3.ascending(a.user, b.user); });
+			data = dat;
+			createChart(data, keys);
+		});
+		
+	}
+	function createChart(data, keys){
+		
+		// loadData(filename);
+		const colors = ["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"];
+		var svg = d3.select("svg");
+		const margin = {top: 20, right: 20, bottom: 30, left: 40};
+		const width = +svg.attr("width") - margin.left - margin.right;
+		const height = +svg.attr("height") - margin.top - margin.bottom;
+		const g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		var x = d3.scaleBand()
+			.rangeRound([0, width])
+			.paddingInner(0.05)
+			.align(0.1);
+		var x1 = d3.scaleBand()
+			.padding(0.05)
+		var y = d3.scaleLinear()
+			.rangeRound([height, 0]);
+		var z = d3.scaleOrdinal()
+			.range(colors);
+
+		console.log(data);
+		x.domain(data.map(function(d) { return d.user; }));
+		y.domain([0, 1.01]).nice();
+		z.domain(keys);
+
+		const barContainer = g.append('g');
+
+		const xAxis = g.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(d3.axisBottom(x));
+
+		const yAxis = g.append("g")
+			.attr("class", "axis")
+
+		yAxis
+			.call(d3.axisLeft(y).ticks(null, "s"))	//this line different
+			.append("text")
+			.attr("x", 2)
+			.attr("y", y(y.ticks().pop()) + 0.5)
+			.attr("dy", "0.32em")
+			.attr("fill", "#000")
+			.attr("font-weight", "bold")
+			.attr("text-anchor", "start")
+			.text("Max");
+		
+		var legend = g.append("g")
+			.attr("font-family", "sans-serif")
+			.attr("font-size", 10)
+			.attr("text-anchor", "end")
+			.selectAll("g")
+			.data(keys.slice().reverse())
+			.enter().append("g")
+			.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+
+		legend.append("rect")
+			.attr("x", width - 19)
+			.attr("width", 19)
+			.attr("height", 19)
+			.attr("fill", z);
+
+		legend.append("text")
+			.attr("x", width - 24)
+			.attr("y", 9.5)
+			.attr("dy", "0.32em")
+			.text(function(d) { return d; });
+
+		const stack = d3.stack()
+			.keys(keys);
+			// console.log(data);
+			// x.domain(data.map(function(d) { return d.user; }));
+			// y.domain([0, 1.1]).nice();
+			// z.domain(keys);
+			
+			// g.enter().append("g")
+
+			// g.append("g")
+			//   .selectAll("g")
+			//   .data(d3.stack().keys(keys)(data))
+			//   .enter().append("g")
+			//   .attr("class", "mainChart")
+			//   .attr("id", "theBars")
+			//   .attr("fill", function(d) { return z(d.key); })
+			//   .selectAll("rect")
+			//   .data(function(d) { return d; })
+			//   .enter().append("rect")
+			//   .attr("x", function(d) { return x(d.data.user); })
+			//   .attr("y", function(d) { return y(d[1]); })
+			//   .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+			//   .attr("width", x.bandwidth());
+
+			// }
+		// );	
+	// }
+	function pad(num, size){ return ('000000000' + num).substr(-size); }
+
+	// function updateData() {
+		// function pad(num, size){ return ('000000000' + num).substr(-size); }
+
+		// if (counter < 27)
+		// 	counter += 1;
+		// else
+		// 	counter = 1;
+		
+		// makeChart("../etrsnapshots/etrsnapshot" + pad(counter, 6) + ".csv");
+		// makeChart("fakedata/testcr" + counter + ".csv");
+		// d3.csv("../t2.csv",function (d, i, columns) {
+		// 	for (i = 1, t = 0; i < columns.length; ++i) t += d[columns[i]] = +d[columns[i]];
+		// 	d.total = t;
+		// 	// console.log(t);
+		// 	return d;
+			
+		// }, function (error, data) {
+		// 	console.log(data);
+		// 	if (error) throw error;
+		// 	// g.remove("#theBars")
+		// 	var keys = data.columns.slice(1);
+		// 	// data.sort(function(a, b) { return b.total - a.total; });
+		// // 	// console.log(data);
+		// 	x.domain(data.map(function(d) { return d.User; }));
+		// 	y.domain([0, d3.max(data, function(d) { return 1.01; })]).nice();
+		// 	z.domain(keys);
+		// })
+
+		// yAxis.transition()
+		// 	.call(d3.axisLeft(y))
+
+		// g.append("g")
+		//   .selectAll("g")
+		//   .data(d3.stack().keys(keys)(data))
+		//   .enter().append("g")
+		//   .attr("class", "mainChart")
+		//   .attr("id", "theBars")
+		//   .attr("fill", function(d) { return z(d.key); })
+		//   .selectAll("rect")
+		//   .data(function(d) { return d; })
+		//   .enter().append("rect")
+		//   .attr("x", function(d) { return x(d.data.user); })
+		//   .attr("y", function(d) { return y(d[1]); })
+		//   .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+		//   .attr("width", x.bandwidth());
+
+		const barSections = barContainer
+			.selectAll('g')
+			.data(d3.stack().keys(keys)(data))
+
+		// barsWithData.exit().remove()
+
+		const bars = barSections
+			.enter().append('g')
+			// .merge(barSections)
+			.selectAll("rect")
+			.data(function (d) { return d;})
+
+		const enterBars = bars.enter().append("rect")
+		.attr("fill", function (d) { return z(d.key); });
+		// bars.exit().transition().style("opacity", 0).remove()
+
+		enterBars
+		.attr("x", function(d) { return x(d.data.user); })
+		.attr("y", function(d) { return y(d[1]); })
+		.attr("width", x.bandwidth())
+		.transition()
+		.duration(500)
+		// .delay((d,i) => i * 50)
+		
+		.attr("height", function(d) { return y(d[0]) - y(d[1]); });
+		
+		
+	// }
+
+}
+
+	
+
+
+	
+
+</script>
+
+</html>
