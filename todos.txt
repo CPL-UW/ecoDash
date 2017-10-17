@@ -1,3 +1,21 @@
+Meeting notes:
+
+  --make graph for all history with real data
+
+  Add names for users
+  fix blank columns
+  // graph over time of exp, tink, and ref events for everyone
+  	amount of data collected in total (?)
+  		what value does that have for teachers, what consequences or such; 
+  have tool tips or labels for bar sections
+
+  put labels on bars big enough – name mainly
+
+  sliders of the times
+		bokeh
+
+
+
 Ecoxpt todos: 
 
 make this robust, 
