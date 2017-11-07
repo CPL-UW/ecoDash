@@ -1,5 +1,8 @@
 Meeting notes:
 
+make an option to make it last 10 minutes, or whole class period
+hear from server people – 
+
   --make graph for all history with real data
 
   Add names for users

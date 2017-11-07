@@ -3,11 +3,11 @@ import datetime
 import logging
 from bokeh.core.properties import value
 from bokeh.io import show, output_file, curdoc
-from bokeh.models import ColumnDataSource, Legend, HoverTool
+from bokeh.models import ColumnDataSource, Legend, HoverTool, Title
 from bokeh.plotting import figure, show, output_file
 # from bokeh.charts import Bar, output_file, show
 from bokeh.layouts import row, widgetbox
-from bokeh.models.widgets import Button, RadioButtonGroup, Select, Slider
+from bokeh.models.widgets import Button, RadioButtonGroup, Select, Slider, Paragraph
 import math
 
 links = pd.read_csv("/Users/visheshk/Dropbox/ecoXPT/eventmetas.csv")
@@ -56,29 +56,28 @@ studs = ['dmlwblock2pair3',
 
 userdf = df
 def subuserdf (users):
-	global userdf
-	userdf = df[df["username"].isin(users)]
+  global userdf
+  userdf = df[df["username"].isin(users)]
 
 subuserdf(studs)
 latesttime = datetime.datetime.strptime(userdf.iloc[0]["timestamp"][:-3], pattern)
 earliesttime = datetime.datetime.strptime(userdf.iloc[len(userdf) - 1]["timestamp"][:-3], pattern)
 campLength = (latesttime - earliesttime).days * 1440
-# latesttime = datetime.datetime.now()
 
 def endTime(gap):
-	# latesttime = datetime.datetime.strptime(userdf.iloc[0]["timestamp"][:-3], pattern)
-	return (latesttime - datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')
+  return (latesttime - datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')
 
 def startTime (gap):
   return (earliesttime + datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')  
 
-def makesubdf(startgap, endgap):
-  if (startgap > endgap):
-    
-  startTime = startTime
-	lastTime = endTime(gap)
-	global timedf 
-	timedf = userdf[userdf["timestamp"] > lastTime & userdf["timestamp"] < startTime]
+def makesubdf(timeStartGap, timeEndGap):
+  if (timeEndGap >= timeStartGap):
+    timeStartGap = timeEndGap + 10
+    start.value = timeStartGap
+  oldestTime = endTime(timeStartGap)
+  newestTime = endTime(timeEndGap)
+  global timedf 
+  timedf = userdf[(userdf["timestamp"] > oldestTime) & (userdf["timestamp"] < newestTime)]
   # return userdf[userdf["timestamp"] > lastTime]
 
 # timedf = makesubdf(6)
@@ -142,46 +141,47 @@ def fillStackDict():
           else:
             stackDict[st].append(0)
 
-# output_file("bar_stacked.html")
-
-# start = Slider(title="Start Time", value=15, start=campLength, end=0, step=1)
 print campLength
-start = Slider(title="Start Time", value=15, start=1, end=campLength, step=1)
-end = Slider(title="Start Time", value=0, start=1, end=campLength, step=1)
+start = Slider(title="Oldest point of time from now", value=15, start=1, end=campLength, step=1)
+end = Slider(title="Latest point of time from now", value=0, start=1, end=campLength, step=1)
+para = Paragraph(text = """ Test""")
 
-inputs = widgetbox(start)
+inputs = widgetbox(start, end, para)
 
-def everythingForStack (gap):
-  # global source
-  # startTime = datetime.datetime.now()
-  makesubdf(gap)
+def everythingForStack (startgap, endgap):
+  makesubdf(startgap, endgap)
   mainTimeProcessing()
   setupFinalDict()
   fillFinalDict()
   setupStackDict()
   fillStackDict()
-  # source = ColumnDataSource(data=stackDict)
 
 def update_data(attrname, old, new):
-  global start
-  # startTime = datetime.datetime.now()
-  # print new
-  # print start
-  gap = start.value
-  print gap
-  everythingForStack(gap)
+  # global start
+  # gap = start.value
+  # print gap
+  everythingForStack(start.value, end.value)
   global source
   source.data = stackDict
-  # source.change.emit()
-  # p.vbar_stack(states, x='students', width=0.9, color=colors, source=source, legend=[value(x) for x in states])
-  # print datetime.datetime.now() - startTime
-  # makePlot()
+  # global p
+  enddays = start.value / 1440
+  endhrs = (start.value % 1440) / 60
+  endmins = start.value % 60
+  startdays = end.value / 1440
+  starthrs = (end.value % 1440) / 60
+  startmins = end.value % 60
+  titletext = "Beginning: " + str(enddays) + " days, " + str(endhrs) + " hours, " + str(endmins) + " minutes ago. Ending: "  + str(startdays) + " days, " + str(starthrs) + " hours, " + str(startmins) + " minutes ago."
+  # p.title = Title(text=titletext, align="left")
+  global para
+  para.text = titletext
+  
 
 start.on_change('value', update_data)
-everythingForStack(15)
+end.on_change('value', update_data)
+
+everythingForStack(15, 0)
 
 source = ColumnDataSource(data=stackDict)
-# p = figure(x_range=studs, plot_height=700, title="Student actions")
 p = figure(x_range=studs, plot_height=700, title="Student actions", toolbar_location=None, tools="")
 
 colors = ["#FF77FF", "#ff5050", "#cccc00", "#6666ff", "#009999", "#66ff66"]
@@ -199,19 +199,7 @@ def makePlot():
   p.xaxis.major_label_orientation = math.pi/4
 
 makePlot()
-# legend = Legend(
-#   items = [
-#     (states, bars)
-#   ], location = (0, -30)
-# )
-# p.legend.location = (0, -30)
 
-# legend = p.legend
-
-# slider = Slider(start=0, end=10, value=1, step=1, title="Slider")
-# show(widgetbox(slider, width = 100))
-# p.add_layout(legend, "right")
-# show(p)
 
 curdoc().add_root(row(inputs, p, width=800))
 curdoc().title = "Student States"
