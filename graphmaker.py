@@ -7,68 +7,68 @@ from bokeh.models import ColumnDataSource, Legend, HoverTool, Title
 from bokeh.plotting import figure, show, output_file
 # from bokeh.charts import Bar, output_file, show
 from bokeh.layouts import row, widgetbox
-from bokeh.models.widgets import Button, RadioButtonGroup, Select, Slider, Paragraph
+from bokeh.models.widgets import Button, RadioButtonGroup, Select, Slider, Paragraph, Div
 import math
 
-links = pd.read_csv("/Users/visheshk/Dropbox/ecoXPT/eventmetas.csv")
+links = pd.read_csv("../../eventmetas.csv")
 evMetas = dict(zip(list(links.Type), list(links.meta)))
-# evMetas[""]
 
+df = pd.read_csv("../../allTheData.csv")
 
-# df = pd.read_csv("../allTheData.csv")
-df = pd.read_csv("/Users/visheshk/Dropbox/ecoXPT/allTheData.csv")
-
-df = df.sort_values("timestamp", ascending = False)
-timedf = df
-
+# timedf = df
 # 2017-05-29 22:15:06.582413-04
 pattern = "%Y-%m-%d %H:%M:%S.%f"
 
-def getSec(t):
-	return int(time.mktime(time.strptime(t[:-3], pattern)))	
-
-def makeTime(t):
-	return time.strptime(t[:-3], pattern)
-
-def makeMeta(e):
-  # print e
-  # return evMetas[e]
-  if (e  in evMetas.keys()):
-    return evMetas[e]
-  return "None"
-# df["times"] = df["timestamp"].apply(getSec)
-# df["timet"] = df["timestamp"].apply(makeTime)
-
-df["metas"] = df["type"].apply(makeMeta)
-
-studs = ['dmlwblock2pair3', 
+studsA = ['dmlwblock2pair3', 
   'dmlwblock2pair9', 
   'dmlwblock2pair8',
   'dmlwblock2pair12', 
   'dmlwblock2pair11',
-  'dmlwblock2pair7', 
-  'dmlwblock2pair1', 
   'dmlwblock2pair5',
   'dmlwblock2pair6', 
   'dmlwblock2pair2',
   'dmlwblock2pair4', 
   'dmlwblock2pair10']
 
-userdf = df
+studsB = ['dmlwblock2pair3', 
+  'dmlwblock2pair1', 
+  'dmlwblock2pair11',
+  'dmlwblock2pair12', 
+  'dmlwblock2pair7', 
+  'dmlwblock2pair5',
+  'dmlwblock2pair6', 
+  'dmlwblock2pair2',
+  'dmlwblock2pair4', 
+  'dmlwblock2pair10']
+
+classes = {
+  "Class A": studsA,
+  "Class B": studsB
+}
+
+
+def getSec(t):
+  return int(time.mktime(time.strptime(t[:-3], pattern))) 
+
+def makeTime(t):
+  return time.strptime(t[:-3], pattern)
+
+def makeMeta(e):
+  if (e  in evMetas.keys()):
+    return evMetas[e]
+  return "None"
+
+
 def subuserdf (users):
   global userdf
   userdf = df[df["username"].isin(users)]
 
-subuserdf(studs)
-latesttime = datetime.datetime.strptime(userdf.iloc[0]["timestamp"][:-3], pattern)
-earliesttime = datetime.datetime.strptime(userdf.iloc[len(userdf) - 1]["timestamp"][:-3], pattern)
-campLength = (latesttime - earliesttime).days * 1440
-
 def endTime(gap):
-  return (latesttime - datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')
+  # return (latesttime - datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')
+  return (latesttime - datetime.timedelta(minutes = gap)).strftime(pattern)
 
 def startTime (gap):
-  return (earliesttime + datetime.timedelta(minutes = gap)).strftime('%Y-%m-%d %H:%M:%S.%f')  
+  return (earliesttime + datetime.timedelta(minutes = gap)).strftime(pattern)
 
 def makesubdf(timeStartGap, timeEndGap):
   if (timeEndGap >= timeStartGap):
@@ -80,18 +80,11 @@ def makesubdf(timeStartGap, timeEndGap):
   timedf = userdf[(userdf["timestamp"] > oldestTime) & (userdf["timestamp"] < newestTime)]
   # return userdf[userdf["timestamp"] > lastTime]
 
-# timedf = makesubdf(6)
-typecounts = df
 def mainTimeProcessing():
   global typecounts
   # makesubdf(15)
   a = timedf.groupby(["username", "metas"])
   typecounts = a.size()
-
-finalDict = {}
-states = ["Analysis", "Exploration", "Collection", "Experimentation", "Hypothesis", "Data"]
-# finalDict = {action: states}
-
 
 def setupFinalDict():
   global finalDict
@@ -114,8 +107,6 @@ def fillFinalDict():
   global finalDict
   for s in studs:
     finalDict[s]["total"] = sum(finalDict[s].values())
-
-stackDict = {}
 
 def setupStackDict():
   global stackDict
@@ -141,12 +132,23 @@ def fillStackDict():
           else:
             stackDict[st].append(0)
 
-print campLength
-start = Slider(title="Oldest point of time from now", value=15, start=1, end=campLength, step=1)
-end = Slider(title="Latest point of time from now", value=0, start=1, end=campLength, step=1)
-para = Paragraph(text = """ Test""")
-
-inputs = widgetbox(start, end, para)
+def setDivText():
+  global div
+  # global para
+  div.text = "Data starts: " + str(endTime(start.value))[:-7] + " <br /> Data ends: " + str(endTime(end.value))[:-7]
+  # para.text = "Data starts: " + str(endTime(start.value))[:-7] + " \n Data ends: " + str(endTime(end.value))[:-7]
+    # global p
+  # enddays = truncateDecimals(start.value / 1440)
+  # endhrs = truncateDecimals((start.value % 1440) / 60)
+  # endmins = truncateDecimals(start.value % 60)
+  # startdays = truncateDecimals(end.value / 1440)
+  # starthrs = truncateDecimals((end.value % 1440) / 60)
+  # startmins = truncateDecimals(end.value % 60)
+  # titletext = "Data starts: " + str(endTime(start.value))[:-7] + " \n Data ends: " + str(endTime(end.value))[:-7]
+   # + " \n <br />Beginning: " + str(enddays) + " days, " + str(endhrs) + " hours, " + str(endmins) + " minutes ago. Ending: "  + str(startdays) + " days, " + str(starthrs) + " hours, " + str(startmins) + " minutes ago."
+  # p.title = Title(text=titletext, align="left")
+  # global para
+  # para.text = titletext
 
 def everythingForStack (startgap, endgap):
   makesubdf(startgap, endgap)
@@ -156,35 +158,34 @@ def everythingForStack (startgap, endgap):
   setupStackDict()
   fillStackDict()
 
+def truncateDecimals(longFloat):
+  twodecs = int(longFloat * 100)
+  return twodecs/100.0
+
 def update_data(attrname, old, new):
-  # global start
-  # gap = start.value
-  # print gap
+  if (new in twindow.keys() and new != "Custom"):
+    end.value = start.value - twindow[time_window.value]
+  elif (time_window.value != "Custom"):
+    if (start.value == new):
+      end.value = start.value - twindow[time_window.value]
+    elif (end.value == new):
+      start.value = end.value + twindow[time_window.value]
   everythingForStack(start.value, end.value)
   global source
   source.data = stackDict
-  # global p
-  enddays = start.value / 1440
-  endhrs = (start.value % 1440) / 60
-  endmins = start.value % 60
-  startdays = end.value / 1440
-  starthrs = (end.value % 1440) / 60
-  startmins = end.value % 60
-  titletext = "Beginning: " + str(enddays) + " days, " + str(endhrs) + " hours, " + str(endmins) + " minutes ago. Ending: "  + str(startdays) + " days, " + str(starthrs) + " hours, " + str(startmins) + " minutes ago."
-  # p.title = Title(text=titletext, align="left")
-  global para
-  para.text = titletext
-  
+  setDivText()
 
-start.on_change('value', update_data)
-end.on_change('value', update_data)
+def update_class(attrname, old, new):
+  u = classes[class_select.value]
+  subuserdf(u)
+  global users
+  global studs
+  users = u
+  studs = u
+  everythingForStack(start.value, end.value)
+  global source
+  source.data = stackDict
 
-everythingForStack(15, 0)
-
-source = ColumnDataSource(data=stackDict)
-p = figure(x_range=studs, plot_height=700, title="Student actions", toolbar_location=None, tools="")
-
-colors = ["#FF77FF", "#ff5050", "#cccc00", "#6666ff", "#009999", "#66ff66"]
 def makePlot():
   global source
   global states
@@ -198,8 +199,55 @@ def makePlot():
   p.legend.orientation = "horizontal"
   p.xaxis.major_label_orientation = math.pi/4
 
-makePlot()
+df = df.sort_values("timestamp", ascending = False)
 
+df["metas"] = df["type"].apply(makeMeta)
+users = studsA
+studs = studsA
+
+userdf = df
+
+subuserdf(users)
+
+latesttime = datetime.datetime.strptime(userdf.iloc[0]["timestamp"][:-3], pattern)
+earliesttime = datetime.datetime.strptime(userdf.iloc[len(userdf) - 1]["timestamp"][:-3], pattern)
+campLength = (latesttime - earliesttime).days * 1440
+
+# timedf = makesubdf(6)
+typecounts = df
+
+finalDict = {}
+states = ["Analysis", "Exploration", "Collection", "Experimentation", "Hypothesis", "Data"]
+# finalDict = {action: states}
+
+stackDict = {}
+
+print campLength
+start = Slider(title="Oldest point of time from now", value=20, start=1, end=campLength, step=1)
+end = Slider(title="Latest point of time from now", value=0, start=1, end=campLength, step=1)
+para = Paragraph(text = """ Test""")
+div = Div(text= """Test""")
+twindow = {"Custom": -1, "5 min": 5, "10 min": 10, "20 min": 20, "1 hour": 60, "1 day": 1440}
+time_window = Select(value="Custom", title='Time Window', options=twindow.keys())
+class_select = Select(value="Class A", title='Classroom', options=classes.keys())
+
+# inputs = widgetbox(start, end, para)
+setDivText()
+inputs = widgetbox(start, end, time_window, div, class_select)
+
+start.on_change('value', update_data)
+end.on_change('value', update_data)
+time_window.on_change('value', update_data)
+class_select.on_change('value', update_class)
+
+everythingForStack(15, 0)
+
+source = ColumnDataSource(data=stackDict)
+p = figure(x_range=studs, plot_height=700, title="Student actions", toolbar_location=None, tools="")
+
+colors = ["#FF77FF", "#ff5050", "#cccc00", "#6666ff", "#009999", "#66ff66"]
+
+makePlot()
 
 curdoc().add_root(row(inputs, p, width=800))
 curdoc().title = "Student States"

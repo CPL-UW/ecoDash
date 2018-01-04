@@ -1,3 +1,20 @@
+TODOS:
+
+--- 1. time should be human readable
+
+2. should be filterable by class/etc
+
+3. change order of legend
+
+--- 4. add timeline “jump to” buttons (and a “end time” slider)
+
+5. scaling events by likelikness?
+
+-- graph per student
+
+6. setup input for getting student names
+7. sort the order of color in bars
+
 Meeting notes:
 
 make an option to make it last 10 minutes, or whole class period
